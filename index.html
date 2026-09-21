@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDP Family Tracker</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --card-bg: #ffffff;
+    --accent: #6a4fd6;
+    --accent-dark: #4f39ad;
+    --text: #23242a;
+    --muted: #6b6f7b;
+    --upcoming: #2a7de1;
+    --ongoing: #1a9c5c;
+    --past: #9096a3;
+    --border: #e4e5ea;
+    --danger: #d64545;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px 16px 60px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  h1 {
+    font-size: 1.6rem;
+    margin: 0 0 4px;
+  }
+  .subtitle {
+    color: var(--muted);
+    margin: 0 0 20px;
+    font-size: 0.95rem;
+  }
+
+  /* Rotating question banner */
+  .question-card {
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    color: white;
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 14px rgba(106, 79, 214, 0.35);
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+  }
+  .question-card .label {
+    position: absolute;
+    top: 8px;
+    left: 20px;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.75;
+  }
+  .question-text {
+    font-size: 1.05rem;
+    font-weight: 600;
+    padding-top: 12px;
+    transition: opacity 0.25s ease;
+  }
+  .question-card .hint {
+    position: absolute;
+    bottom: 6px;
+    right: 14px;
+    font-size: 0.68rem;
+    opacity: 0.6;
+  }
+
+  /* Event list */
+  .events { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+  .event-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+  .event-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+  .event-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .event-title { font-weight: 600; font-size: 1.02rem; }
+  .event-location { color: var(--muted); font-size: 0.88rem; margin-top: 2px; }
+  .event-range { color: var(--muted); font-size: 0.85rem; margin-top: 6px; }
+  .badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+    color: white;
+  }
+  .badge.upcoming { background: var(--upcoming); }
+  .badge.ongoing { background: var(--ongoing); }
+  .badge.past { background: var(--past); }
+
+  .event-detail {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border);
+    display: none;
+  }
+  .event-card.open .event-detail { display: block; }
+  .countdown {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--accent-dark);
+  }
+  .countdown-label { color: var(--muted); font-size: 0.85rem; margin-bottom: 2px; }
+  .delete-btn {
+    margin-top: 10px;
+    background: none;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+  .delete-btn:hover { background: var(--danger); color: white; }
+
+  /* Add form */
+  .add-section {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .add-section h2 {
+    font-size: 1rem;
+    margin: 0 0 12px;
+  }
+  .field { margin-bottom: 10px; display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 0.8rem; color: var(--muted); }
+  .field input {
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.92rem;
+    font-family: inherit;
+  }
+  .row2 { display: flex; gap: 10px; }
+  .row2 .field { flex: 1; }
+  .add-btn {
+    margin-top: 6px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+  }
+  .add-btn:hover { background: var(--accent-dark); }
+  .empty-hint { color: var(--muted); font-size: 0.9rem; text-align: center; padding: 20px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>PDP Family Tracker</h1>
+  <p class="subtitle">Personal Development Program – deine Ereignisse im Blick</p>
+
+  <div class="question-card" id="questionCard" title="Klicken für eine neue Frage">
+    <span class="label">Impuls</span>
+    <div class="question-text" id="questionText"></div>
+    <span class="hint">klicken für nächste Frage</span>
+  </div>
+
+  <div class="events" id="eventsList"></div>
+
+  <div class="add-section">
+    <h2>Neues Ereignis hinzufügen</h2>
+    <form id="addForm">
+      <div class="field">
+        <label for="title">Titel</label>
+        <input type="text" id="title" placeholder="z.B. PDP Family Treffen" required>
+      </div>
+      <div class="field">
+        <label for="location">Ort</label>
+        <input type="text" id="location" placeholder="z.B. Paderborn, Welcome Hotel" required>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="start">Start</label>
+          <input type="datetime-local" id="start" required>
+        </div>
+        <div class="field">
+          <label for="end">Ende</label>
+          <input type="datetime-local" id="end" required>
+        </div>
+      </div>
+      <button type="submit" class="add-btn">Ereignis hinzufügen</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'pdpFamilyEvents';
+  const TIME_ZONE = 'Europe/Berlin';
+
+  // Interprets a "YYYY-MM-DDTHH:MM" string as wall-clock time in TIME_ZONE
+  // and returns the corresponding UTC epoch ms, regardless of the viewer's own timezone.
+  function zonedTimeToUtc(dateTimeLocalStr, timeZone) {
+    const [datePart, timePart] = dateTimeLocalStr.split('T');
+    const [y, mo, d] = datePart.split('-').map(Number);
+    const [h, mi] = timePart.split(':').map(Number);
+    const naiveUTC = Date.UTC(y, mo - 1, d, h, mi, 0);
+
+    const dtf = new Intl.DateTimeFormat('en-US', {
+      timeZone, hourCycle: 'h23',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+    const parts = dtf.formatToParts(new Date(naiveUTC)).reduce((acc, p) => {
+      acc[p.type] = p.value; return acc;
+    }, {});
+    const asUTC = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
+    const offset = asUTC - naiveUTC;
+    return naiveUTC - offset;
+  }
+
+  const defaultEvents = [
+    {
+      id: 'evt-1',
+      title: 'Leading me first',
+      location: 'Paderborn, Welcome Hotel',
+      start: '2026-09-15T08:30',
+      end: '2026-09-17T16:30'
+    },
+    {
+      id: 'evt-2',
+      title: 'Performing in tough situations',
+      location: 'Paderborn, Best Western Premier Park Hotel',
+      start: '2026-11-24T08:30',
+      end: '2026-11-26T16:30'
+    },
+    {
+      id: 'evt-3',
+      title: ' Presenting with excellence',
+      location: 'Rietbarg, Lindhotel',
+      start: '2027-02-16T08:30',
+      end: '2027-02-17T16:30'
+    }
+  ];
+
+  const questions = [
+    'Heute schon deine Gute-Laune-Routine absolviert?',
+    'Heute schon Danke gesagt?',
+    'Hast du heute schon jemandem ein Kompliment gemacht?',
+    'Was war heute dein größter Erfolg – auch wenn er klein war?',
+    'Hast du heute Zeit nur für dich selbst genommen?',
+    'Wem könntest du heute eine Freude machen?',
+    'Wofür bist du heute dankbar?',
+    'Hast du heute etwas Neues gelernt?',
+    'Wie geht es dir gerade wirklich?',
+    'Hast du heute jemandem aktiv zugehört?',
+    'Hast du heute an deinem Ziel gearbeitet?',
+    'Was hat dich heute zum Lächeln gebracht?'
+  ];
+
+  function loadEvents() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return defaultEvents.slice();
+  }
+
+  function saveEvents(events) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+    } catch (e) {}
+  }
+
+  let events = loadEvents();
+  let manualOverride = false;
+  let openEventId = computeAutoSelectId(events);
+
+  const eventsList = document.getElementById('eventsList');
+  const addForm = document.getElementById('addForm');
+
+  // Displays the entered wall-clock time as-is (it's already Europe/Berlin time),
+  // independent of the viewer's own system timezone.
+  function fmtDate(dateTimeLocalStr) {
+    const [datePart, timePart] = dateTimeLocalStr.split('T');
+    const [y, mo, d] = datePart.split('-');
+    return `${d}.${mo}.${y}, ${timePart} Uhr`;
+  }
+
+  function diffParts(ms) {
+    ms = Math.max(0, ms);
+    const sec = Math.floor(ms / 1000);
+    const days = Math.floor(sec / 86400);
+    const hours = Math.floor((sec % 86400) / 3600);
+    const mins = Math.floor((sec % 3600) / 60);
+    const secs = sec % 60;
+    return { days, hours, mins, secs };
+  }
+
+  function partsText(p) {
+    return `${p.days}T ${String(p.hours).padStart(2,'0')}:${String(p.mins).padStart(2,'0')}:${String(p.secs).padStart(2,'0')}`;
+  }
+
+  function getStatus(ev, now) {
+    const start = zonedTimeToUtc(ev.start, TIME_ZONE);
+    const end = zonedTimeToUtc(ev.end, TIME_ZONE);
+    if (now < start) return 'upcoming';
+    if (now <= end) return 'ongoing';
+    return 'past';
+  }
+
+  function statusLabel(status) {
+    if (status === 'upcoming') return 'Bevorstehend';
+    if (status === 'ongoing') return 'Läuft gerade';
+    return 'Vorbei';
+  }
+
+  // Ongoing event wins (soonest to end); otherwise the soonest upcoming event; else none.
+  function computeAutoSelectId(evts) {
+    const now = Date.now();
+    const ongoing = evts
+      .filter(e => getStatus(e, now) === 'ongoing')
+      .sort((a, b) => zonedTimeToUtc(a.end, TIME_ZONE) - zonedTimeToUtc(b.end, TIME_ZONE));
+    if (ongoing.length) return ongoing[0].id;
+
+    const upcoming = evts
+      .filter(e => getStatus(e, now) === 'upcoming')
+      .sort((a, b) => zonedTimeToUtc(a.start, TIME_ZONE) - zonedTimeToUtc(b.start, TIME_ZONE));
+    if (upcoming.length) return upcoming[0].id;
+
+    return null;
+  }
+
+  function renderEvents() {
+    eventsList.innerHTML = '';
+
+    if (events.length === 0) {
+      eventsList.innerHTML = '<div class="empty-hint">Noch keine Ereignisse. Füge unten eines hinzu.</div>';
+      return;
+    }
+
+    const sorted = events.slice().sort((a, b) => zonedTimeToUtc(a.start, TIME_ZONE) - zonedTimeToUtc(b.start, TIME_ZONE));
+
+    sorted.forEach(ev => {
+      const now = Date.now();
+      const status = getStatus(ev, now);
+      const card = document.createElement('div');
+      card.className = 'event-card' + (openEventId === ev.id ? ' open' : '');
+      card.dataset.id = ev.id;
+
+      card.innerHTML = `
+        <div class="event-top">
+          <div>
+            <div class="event-title">${escapeHtml(ev.title)}</div>
+            <div class="event-location">${escapeHtml(ev.location)}</div>
+            <div class="event-range">${fmtDate(ev.start)} – ${fmtDate(ev.end)}</div>
+          </div>
+          <span class="badge ${status}">${statusLabel(status)}</span>
+        </div>
+        <div class="event-detail">
+          <div class="countdown-label" data-role="countdown-label"></div>
+          <div class="countdown" data-role="countdown"></div>
+          <button type="button" class="delete-btn" data-role="delete">Löschen</button>
+        </div>
+      `;
+
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('[data-role="delete"]')) return;
+        const isOpen = card.classList.contains('open');
+        document.querySelectorAll('.event-card.open').forEach(c => c.classList.remove('open'));
+        manualOverride = true;
+        if (!isOpen) {
+          card.classList.add('open');
+          openEventId = ev.id;
+        } else {
+          openEventId = null;
+        }
+        updateCountdowns();
+      });
+
+      card.querySelector('[data-role="delete"]').addEventListener('click', () => {
+        if (confirm(`"${ev.title}" wirklich löschen?`)) {
+          events = events.filter(e2 => e2.id !== ev.id);
+          saveEvents(events);
+          manualOverride = false;
+          openEventId = computeAutoSelectId(events);
+          renderEvents();
+        }
+      });
+
+      eventsList.appendChild(card);
+    });
+
+    updateCountdowns();
+  }
+
+  function updateCountdowns() {
+    document.querySelectorAll('.event-card.open').forEach(card => {
+      const ev = events.find(e => e.id === card.dataset.id);
+      if (!ev) return;
+      const now = Date.now();
+      const start = zonedTimeToUtc(ev.start, TIME_ZONE);
+      const end = zonedTimeToUtc(ev.end, TIME_ZONE);
+      const status = getStatus(ev, now);
+      const labelEl = card.querySelector('[data-role="countdown-label"]');
+      const countEl = card.querySelector('[data-role="countdown"]');
+
+      if (status === 'upcoming') {
+        labelEl.textContent = 'Beginnt in';
+        countEl.textContent = partsText(diffParts(start - now));
+      } else if (status === 'ongoing') {
+        labelEl.textContent = 'Läuft gerade – Ende in';
+        countEl.textContent = partsText(diffParts(end - now));
+      } else {
+        labelEl.textContent = 'Vorbei seit';
+        countEl.textContent = partsText(diffParts(now - end));
+      }
+    });
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  addForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const title = document.getElementById('title').value.trim();
+    const location = document.getElementById('location').value.trim();
+    const start = document.getElementById('start').value;
+    const end = document.getElementById('end').value;
+    if (!title || !location || !start || !end) return;
+
+    events.push({
+      id: 'evt-' + Date.now(),
+      title, location, start, end
+    });
+    saveEvents(events);
+    addForm.reset();
+    if (!manualOverride) openEventId = computeAutoSelectId(events);
+    renderEvents();
+  });
+
+  // Rotating questions
+  const questionText = document.getElementById('questionText');
+  const questionCard = document.getElementById('questionCard');
+  let qIndex = Math.floor(Math.random() * questions.length);
+
+  function showQuestion(index) {
+    questionText.style.opacity = 0;
+    setTimeout(() => {
+      questionText.textContent = questions[index];
+      questionText.style.opacity = 1;
+    }, 150);
+  }
+
+  function nextQuestion() {
+    qIndex = (qIndex + 1) % questions.length;
+    showQuestion(qIndex);
+  }
+
+  questionCard.addEventListener('click', nextQuestion);
+  showQuestion(qIndex);
+  setInterval(nextQuestion, 15000);
+
+  renderEvents();
+  setInterval(updateCountdowns, 1000);
+  // Keep the auto-selection current as events transition (upcoming -> ongoing -> past).
+  setInterval(() => {
+    if (manualOverride) return;
+    const nextAuto = computeAutoSelectId(events);
+    if (nextAuto !== openEventId) {
+      openEventId = nextAuto;
+      renderEvents();
+    }
+  }, 30000);
+</script>
+</body>
+</html>
