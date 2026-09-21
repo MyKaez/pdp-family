@@ -93,7 +93,6 @@
     gap: 8px;
   }
   .event-title { font-weight: 600; font-size: 1.02rem; }
-  .event-location { color: var(--muted); font-size: 0.88rem; margin-top: 2px; }
   .event-range { color: var(--muted); font-size: 0.85rem; margin-top: 6px; }
   .badge {
     font-size: 0.72rem;
@@ -132,41 +131,6 @@
   }
   .delete-btn:hover { background: var(--danger); color: white; }
 
-  /* Add form */
-  .add-section {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px;
-  }
-  .add-section h2 {
-    font-size: 1rem;
-    margin: 0 0 12px;
-  }
-  .field { margin-bottom: 10px; display: flex; flex-direction: column; gap: 4px; }
-  .field label { font-size: 0.8rem; color: var(--muted); }
-  .field input {
-    padding: 8px 10px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-size: 0.92rem;
-    font-family: inherit;
-  }
-  .row2 { display: flex; gap: 10px; }
-  .row2 .field { flex: 1; }
-  .add-btn {
-    margin-top: 6px;
-    background: var(--accent);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 10px 16px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    width: 100%;
-  }
-  .add-btn:hover { background: var(--accent-dark); }
   .empty-hint { color: var(--muted); font-size: 0.9rem; text-align: center; padding: 20px 0; }
   .footer-link { text-align: center; margin-top: 18px; font-size: 0.8rem; }
   .footer-link a { color: var(--muted); text-decoration: none; }
@@ -185,31 +149,6 @@
   </div>
 
   <div class="events" id="eventsList"></div>
-
-  <div class="add-section">
-    <h2>Neues Ereignis hinzufügen</h2>
-    <form id="addForm">
-      <div class="field">
-        <label for="title">Titel</label>
-        <input type="text" id="title" placeholder="z.B. PDP Family Treffen" required>
-      </div>
-      <div class="field">
-        <label for="location">Ort</label>
-        <input type="text" id="location" placeholder="z.B. Paderborn, Welcome Hotel" required>
-      </div>
-      <div class="row2">
-        <div class="field">
-          <label for="start">Start</label>
-          <input type="datetime-local" id="start" required>
-        </div>
-        <div class="field">
-          <label for="end">Ende</label>
-          <input type="datetime-local" id="end" required>
-        </div>
-      </div>
-      <button type="submit" class="add-btn">Ereignis hinzufügen</button>
-    </form>
-  </div>
 
   <p class="footer-link">
     <a href="https://github.com/MyKaez/pdp-family" target="_blank" rel="noopener">GitHub: MyKaez/pdp-family</a>
@@ -245,21 +184,18 @@
     {
       id: 'evt-1',
       title: 'Leading me first',
-      location: 'Paderborn, Welcome Hotel',
       start: '2026-09-15T08:30',
       end: '2026-09-17T16:30'
     },
     {
       id: 'evt-2',
       title: 'Performing in tough situations',
-      location: 'Paderborn, Best Western Premier Park Hotel',
       start: '2026-11-24T08:30',
       end: '2026-11-26T16:30'
     },
     {
       id: 'evt-3',
       title: ' Presenting with excellence',
-      location: 'Rietbarg, Lindhotel',
       start: '2027-02-16T08:30',
       end: '2027-02-17T16:30'
     }
@@ -299,7 +235,6 @@
   let openEventId = computeAutoSelectId(events);
 
   const eventsList = document.getElementById('eventsList');
-  const addForm = document.getElementById('addForm');
 
   // Displays the entered wall-clock time as-is (it's already Europe/Berlin time),
   // independent of the viewer's own system timezone.
@@ -357,7 +292,7 @@
     eventsList.innerHTML = '';
 
     if (events.length === 0) {
-      eventsList.innerHTML = '<div class="empty-hint">Noch keine Ereignisse. Füge unten eines hinzu.</div>';
+      eventsList.innerHTML = '<div class="empty-hint">Noch keine Ereignisse.</div>';
       return;
     }
 
@@ -374,7 +309,6 @@
         <div class="event-top">
           <div>
             <div class="event-title">${escapeHtml(ev.title)}</div>
-            <div class="event-location">${escapeHtml(ev.location)}</div>
             <div class="event-range">${fmtDate(ev.start)} – ${fmtDate(ev.end)}</div>
           </div>
           <span class="badge ${status}">${statusLabel(status)}</span>
@@ -445,24 +379,6 @@
     div.textContent = str;
     return div.innerHTML;
   }
-
-  addForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const title = document.getElementById('title').value.trim();
-    const location = document.getElementById('location').value.trim();
-    const start = document.getElementById('start').value;
-    const end = document.getElementById('end').value;
-    if (!title || !location || !start || !end) return;
-
-    events.push({
-      id: 'evt-' + Date.now(),
-      title, location, start, end
-    });
-    saveEvents(events);
-    addForm.reset();
-    if (!manualOverride) openEventId = computeAutoSelectId(events);
-    renderEvents();
-  });
 
   // Rotating questions
   const questionText = document.getElementById('questionText');
