@@ -17,6 +17,8 @@
     --past: #9096a3;
     --border: #e4e5ea;
     --danger: #d64545;
+    --cat-training: var(--accent);
+    --cat-lunch: #e08a2b;
   }
   * { box-sizing: border-box; }
   body {
@@ -80,11 +82,14 @@
   .event-card {
     background: var(--card-bg);
     border: 1px solid var(--border);
+    border-left: 4px solid var(--border);
     border-radius: 12px;
     padding: 14px 16px;
     cursor: pointer;
     transition: box-shadow 0.15s ease, border-color 0.15s ease;
   }
+  .event-card[data-category="training"] { border-left-color: var(--cat-training); }
+  .event-card[data-category="lunch"] { border-left-color: var(--cat-lunch); }
   .event-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
   .event-top {
     display: flex;
@@ -93,6 +98,7 @@
     gap: 8px;
   }
   .event-title { font-weight: 600; font-size: 1.02rem; }
+  .event-icon { margin-right: 6px; }
   .event-range { color: var(--muted); font-size: 0.85rem; margin-top: 6px; }
   .badge {
     font-size: 0.72rem;
@@ -185,21 +191,36 @@
       id: 'evt-1',
       title: 'Leading me first',
       start: '2026-09-15T08:30',
-      end: '2026-09-17T16:30'
+      end: '2026-09-17T16:30',
+      category: 'training'
     },
     {
       id: 'evt-2',
       title: 'Performing in tough situations',
       start: '2026-11-24T08:30',
-      end: '2026-11-26T16:30'
+      end: '2026-11-26T16:30',
+      category: 'training'
     },
     {
       id: 'evt-3',
       title: ' Presenting with excellence',
       start: '2027-02-16T08:30',
-      end: '2027-02-17T16:30'
+      end: '2027-02-17T16:30',
+      category: 'training'
+    },
+    {
+      id: 'evt-4',
+      title: 'Mittagessen',
+      start: '2026-10-07T12:00',
+      end: '2026-10-07T13:00',
+      category: 'lunch'
     }
   ];
+
+  const CATEGORY_ICONS = {
+    training: '📚',
+    lunch: '🍽️'
+  };
 
   const questions = [
     'Heute schon deine Gute-Laune-Routine absolviert?',
@@ -219,7 +240,14 @@
   function loadEvents() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        const stored = JSON.parse(raw).map(e => ({ category: 'training', ...e }));
+        const storedIds = new Set(stored.map(e => e.id));
+        defaultEvents.forEach(de => {
+          if (!storedIds.has(de.id)) stored.push({ ...de });
+        });
+        return stored;
+      }
     } catch (e) {}
     return defaultEvents.slice();
   }
@@ -304,11 +332,12 @@
       const card = document.createElement('div');
       card.className = 'event-card' + (openEventId === ev.id ? ' open' : '');
       card.dataset.id = ev.id;
+      card.dataset.category = ev.category || 'training';
 
       card.innerHTML = `
         <div class="event-top">
           <div>
-            <div class="event-title">${escapeHtml(ev.title)}</div>
+            <div class="event-title"><span class="event-icon">${CATEGORY_ICONS[ev.category] || ''}</span>${escapeHtml(ev.title)}</div>
             <div class="event-range">${fmtDate(ev.start)} – ${fmtDate(ev.end)}</div>
           </div>
           <span class="badge ${status}">${statusLabel(status)}</span>
